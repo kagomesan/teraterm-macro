@@ -1,0 +1,70 @@
+host_list = 'C:\Users\hoge\Desktop\ttl\list.txt'
+
+fileopen fh host_list 0
+
+while 1
+  filereadln fh buf
+  if result then
+     break
+  endif
+
+strsplit buf ','
+
+HOST = groupmatchstr1
+IP = groupmatchstr2
+
+USER = 'hoge' 
+PASS = 'pass' 
+
+
+;============================================== 
+;; const COMMAND 
+COMMAND = IP
+strconcat COMMAND ':23 /nossh /T=1' 
+
+;; const FILENAME 
+getdate datestr '_status_%Y%m%d_%H%M%S.log'
+logname = 'C:\Users\hoge\Desktop\log\'
+strconcat logname HOST
+strconcat logname datestr
+
+;; connec
+connect COMMAND
+
+wait 'login:'
+sendln USER
+
+wait 'Password:'
+sendln PASS
+
+;; log1 get
+
+wait '$'
+logopen logname 0 1
+
+sendln 'get system status'
+
+wait '$'
+logclose
+
+;; log2 get
+getdate datestr '_session_%Y%m%d_%H%M%S.log'
+logname = 'C:\Users\hoge\Desktop\log\'
+strconcat logname HOST
+strconcat logname datestr
+
+logopen logname 0 1
+
+sendln 'get system session status'
+
+wait '$'
+logclose
+
+pause 1
+sendln 'exit'
+unlink
+
+endwhile
+
+fileclose fh
+end
