@@ -1,0 +1,2 @@
+hoge1,xxx.xxx.xxx.xx1
+hoge2,xxx.xxx.xxx.xx2
