@@ -1,68 +1,83 @@
+;; init
+
 host_list = 'C:\Users\hoge\Desktop\ttl\list.txt'
+CMD = 'C:\Users\hoge\Desktop\ttl\cmd.txt'
+logpath = 'C:\Users\hoge\Desktop\log\'
 
-fileopen fh host_list 0
+USER = 'hoge' 
+PASS = 'hoge' 
+;;==========================
 
-while 1
-   filereadln fh buf
-   if result then
-       break
-   endif
-  
-   strsplit buf ','
+fileopen HOSTLIST host_list 0
+filereadln HOSTLIST HOSTNAME
+ 
+while result = 0
+  strlen HOSTNAME 
+  if result = 0 goto END
+  strmatch HOSTNAME '^#'
+  if result <> 1 CALL SETSUZOKU
+  :END
 
-   HOST = groupmatchstr1
-   IP = groupmatchstr2
+filereadln HOSTLIST HOSTNAME 
+endwhile
 
+fileclose HOSTLIST
 
-   USER = 'hoge' 
-   PASS = 'pass' 
+end
 
+;;==========================
 
-;============================================== 
-;; const COMMAND
+:SETSUZOKU
+
+strsplit HOSTNAME ','
+HOST = groupmatchstr1
+IP = groupmatchstr2
+
+;; コマンド組立て 
 COMMAND = IP
 strconcat COMMAND ':22 /ssh /2 /auth=password /user=' 
 strconcat COMMAND USER
 strconcat COMMAND ' /passwd=' 
 strconcat COMMAND PASS
 
-;; const FILENAME 
-getdate datestr '_status_%Y%m%d_%H%M%S.log'
-logname = 'C:\Users\hoge\Desktop\log\'
-strconcat logname HOST
-strconcat logname datestr
-
-;; connect 
+;; 接続 
 connect COMMAND
-
-;; log1 get
-
-wait '$'
-logopen logname 0 1
-
-sendln 'get system status'
+if result <> 2 return
 
 wait '$'
-logclose
 
-;; log2 get
-getdate datestr '_session_%Y%m%d_%H%M%S.log'
-logname = 'C:\Users\hoge\Desktop\log\'
-strconcat logname HOST
-strconcat logname datestr
+fileopen CMDLIST CMD 0
+filereadln CMDLIST command
 
-logopen logname 0 1
+while result = 0
+  strlen command
+  if result = 0 goto ENDE
+  if result <> 1 then
+  strsplit command ','
+  fn = groupmatchstr1
+  fp = '_'
+  cs = groupmatchstr2
+  
+  getdate datestr '_%Y%m%d_%H%M%S.log'
+  strconcat logpath HOST
+  strconcat logpath fp
+  strconcat logpath fn
+  strconcat logpath datestr
 
-sendln 'get system session status'
-
-wait '$'
-logclose
-
-pause 1
-sendln 'exit'
-unlink
-
+  logopen logpath 1 1
+  sendln cs
+  wait '$'
+  logclose
+  
+  :ENDE
+  logpath = 'C:\Users\hoge\Desktop\log\'
+  filereadln CMDLIST command
 endwhile
 
-fileclose fh
-end
+fileclose CMDLIST
+
+
+mpause 500
+sendln 'exit'
+unlink
+return
