@@ -1,70 +1,85 @@
+;; init
+
 host_list = 'C:\Users\hoge\Desktop\ttl\list.txt'
+CMD = 'C:\Users\hoge\Desktop\ttl\cmd.txt'
+logpath = 'C:\Users\hoge\Desktop\log\'
 
-fileopen fh host_list 0
+USER = 'hoge' 
+PASS = 'hoge' 
+;;==========================
 
-while 1
-  filereadln fh buf
-  if result then
-     break
-  endif
+fileopen HOSTLIST host_list 0
+filereadln HOSTLIST HOSTNAME
+ 
+while result = 0
+  strlen HOSTNAME 
+  if result = 0 goto END
+  strmatch HOSTNAME '^#'
+  if result <> 1 CALL SETSUZOKU
+  :END
 
-strsplit buf ','
+filereadln HOSTLIST HOSTNAME 
+endwhile
 
+fileclose HOSTLIST
+
+end
+
+;;==========================
+
+:SETSUZOKU
+
+strsplit HOSTNAME ','
 HOST = groupmatchstr1
 IP = groupmatchstr2
 
-USER = 'hoge' 
-PASS = 'pass' 
-
-
-;============================================== 
-;; const COMMAND 
+;; コマンド組立て 
 COMMAND = IP
 strconcat COMMAND ':23 /nossh /T=1' 
 
-;; const FILENAME 
-getdate datestr '_status_%Y%m%d_%H%M%S.log'
-logname = 'C:\Users\hoge\Desktop\log\'
-strconcat logname HOST
-strconcat logname datestr
-
-;; connec
+;; 接続 
 connect COMMAND
+if result <> 2 return
 
 wait 'login:'
 sendln USER
 
 wait 'Password:'
 sendln PASS
-
-;; log1 get
-
 wait '$'
-logopen logname 0 1
 
-sendln 'get system status'
+fileopen CMDLIST CMD 0
+filereadln CMDLIST command
 
-wait '$'
-logclose
+while result = 0
+  strlen command
+  if result = 0 goto ENDE
+  if result <> 1 then
+  strsplit command ','
+  fn = groupmatchstr1
+  fp = '_'
+  cs = groupmatchstr2
+  
+  getdate datestr '_%Y%m%d_%H%M%S.log'
+  strconcat logpath HOST
+  strconcat logpath fp
+  strconcat logpath fn
+  strconcat logpath datestr
 
-;; log2 get
-getdate datestr '_session_%Y%m%d_%H%M%S.log'
-logname = 'C:\Users\hoge\Desktop\log\'
-strconcat logname HOST
-strconcat logname datestr
-
-logopen logname 0 1
-
-sendln 'get system session status'
-
-wait '$'
-logclose
-
-pause 1
-sendln 'exit'
-unlink
-
+  logopen logpath 1 1
+  sendln cs
+  wait '$'
+  logclose
+  
+  :ENDE
+  logpath = 'C:\Users\hoge\Desktop\log\'
+  filereadln CMDLIST command
 endwhile
 
-fileclose fh
-end
+fileclose CMDLIST
+
+
+mpause 500
+sendln 'exit'
+unlink
+return
